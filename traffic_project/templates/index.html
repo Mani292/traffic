@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Traffic AI</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>🚦 AI Traffic Prediction System</h2>
+    <p style="text-align: center; color: #666; margin-bottom: 20px;">Predict traffic congestion and get optimal routes across <strong>India</strong> (Prototype)</p>
+    <div class="input-container">
+      <input type="text" id="start" placeholder="🏠 Start Location (e.g., Mumbai)">
+      <input type="text" id="dest" placeholder="🏢 Destination (e.g., Delhi)">
+      <input type="number" id="hour" placeholder="🕐 Hour (0-23)" min="0" max="23" value="10">
+      <input type="number" id="day" placeholder="📅 Day (1-7)" min="1" max="7" value="2">
+      <input type="number" id="speed" placeholder="🚗 Avg Speed (km/h)" min="0" value="35">
+      <input type="number" id="vehicles" placeholder="🚙 Vehicle Count" min="0" value="150">
+      <button onclick="getRoute()">🚀 Get Route & Predict</button>
+    </div>
+    <div id="map">
+      <div id="map-loading">Loading map...</div>
+    </div>
+    <div id="info-boards">
+      <div id="route-board" class="board">
+        <h3>Route Information</h3>
+        <p id="route-info">Select start and destination to get route.</p>
+        <div id="route-loading" style="display: none; color: blue;">Fetching route...</div>
+      </div>
+      <div id="prediction-board" class="board">
+        <h3>Traffic Prediction</h3>
+        <p id="prediction-info">Get route first to see prediction.</p>
+      </div>
+    </div>
+  </div>
+  <script src="/static/script.js"></script>
+</body>
+</html>
