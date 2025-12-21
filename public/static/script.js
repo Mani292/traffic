@@ -120,7 +120,9 @@ async function getRouteOSRM(startCoord, endCoord) {
     const route = data.routes[0];
     return {
       coords: route.geometry.coordinates.map(coord => [coord[1], coord[0]]), // [lat, lon]
-      steps: route.legs[0].steps
+      steps: route.legs[0].steps,
+      duration: route.duration, // Travel time in seconds
+      distance: route.distance  // Distance in meters
     };
   }
   throw new Error('No route found');
@@ -150,9 +152,8 @@ function getRoute() {
       document.getElementById("route-loading").style.display = "none";
       currentRoute = routeData.coords;
       drawRouteOnMap(routeData.coords, startCoord, endCoord);
-      displayDirections(routeData.steps);
-      document.getElementById("route-info").textContent = `Route from ${start} to ${dest} loaded.`;
-      predictForRoute(hour, day, speed, vehicles);
+      displayDirections(routeData.steps, routeData.duration, routeData.distance, start, dest);
+      predictForRoute(hour, day, speed, vehicles, routeData.duration, routeData.distance);
     })
     .catch(e => {
       document.getElementById("route-loading").style.display = "none";
@@ -183,14 +184,48 @@ function drawRouteOnMap(routeCoords, startCoord, endCoord) {
   }
 }
 
-function displayDirections(steps) {
+function displayDirections(steps, duration, distance, start, dest) {
   const directionsDiv = document.getElementById("route-info");
-  let html = "<h3>Directions</h3><ol>";
+
+  // Format duration
+  const hours = Math.floor(duration / 3600);
+  const minutes = Math.round((duration % 3600) / 60);
+  let timeStr = "";
+  if (hours > 0) {
+    timeStr = `${hours} hr ${minutes} min`;
+  } else {
+    timeStr = `${minutes} min`;
+  }
+
+  // Format distance
+  const distKm = (distance / 1000).toFixed(1);
+
+  let html = `
+    <div style="background: #e3f2fd; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+      <div style="font-weight: bold; font-size: 16px; margin-bottom: 8px;">
+        ${start} → ${dest}
+      </div>
+      <div style="display: flex; gap: 20px; font-size: 14px;">
+        <div>
+          <span style="font-size: 18px;">🕐</span>
+          <strong>${timeStr}</strong>
+          <span style="color: #666;">travel time</span>
+        </div>
+        <div>
+          <span style="font-size: 18px;">📍</span>
+          <strong>${distKm} km</strong>
+          <span style="color: #666;">distance</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  html += "<h3>Turn-by-Turn Directions</h3><ol style='font-size: 13px; padding-left: 20px;'>";
   steps.forEach(step => {
-    html += `<li>${step.maneuver.instruction} (${(step.distance / 1000).toFixed(1)} km)</li>`;
+    html += `<li style="margin-bottom: 5px;">${step.maneuver.instruction} (${(step.distance / 1000).toFixed(1)} km)</li>`;
   });
   html += "</ol>";
-  directionsDiv.innerHTML += html;
+  directionsDiv.innerHTML = html;
 }
 
 // Client-side traffic prediction based on input parameters
@@ -248,12 +283,25 @@ function calculateTrafficLevel(hour, day, speed, vehicles) {
   }
 }
 
-function predictForRoute(hour, day, speed, vehicles) {
+function predictForRoute(hour, day, speed, vehicles, duration, distance) {
   console.log("Predicting traffic...");
 
   // Use client-side prediction
   const level = calculateTrafficLevel(hour, day, speed, vehicles);
   console.log("Prediction result:", level);
+
+  // Format duration
+  const hours = Math.floor(duration / 3600);
+  const minutes = Math.round((duration % 3600) / 60);
+  let timeStr = "";
+  if (hours > 0) {
+    timeStr = `${hours} hr ${minutes} min`;
+  } else {
+    timeStr = `${minutes} min`;
+  }
+
+  // Format distance
+  const distKm = (distance / 1000).toFixed(1);
 
   // Display prediction with color-coded indicator
   let colorClass, emoji, bgColor;
@@ -275,7 +323,19 @@ function predictForRoute(hour, day, speed, vehicles) {
     <div style="background: ${bgColor}; padding: 15px; border-radius: 10px; border-left: 4px solid ${colorClass};">
       <div style="font-size: 24px; margin-bottom: 10px;">${emoji}</div>
       <div style="font-size: 18px; font-weight: bold; color: ${colorClass};">${level} Traffic</div>
-      <div style="font-size: 12px; color: #666; margin-top: 5px;">
+      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #ddd;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <span style="font-size: 20px;">🕐</span>
+          <span style="font-size: 16px; font-weight: bold;">${timeStr}</span>
+          <span style="color: #666; font-size: 12px;">estimated travel time</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 20px;">📍</span>
+          <span style="font-size: 16px; font-weight: bold;">${distKm} km</span>
+          <span style="color: #666; font-size: 12px;">total distance</span>
+        </div>
+      </div>
+      <div style="font-size: 12px; color: #666; margin-top: 10px;">
         Based on: ${hour}:00, Day ${day}, ${speed} km/h, ${vehicles} vehicles
       </div>
     </div>
