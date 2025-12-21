@@ -1,3 +1,5 @@
+let map = null;
+
 function predict() {
   console.log("Predict button clicked");
   fetch("/predict-route", {
